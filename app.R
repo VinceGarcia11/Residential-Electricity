@@ -38,7 +38,7 @@ fit_models <- function(x) {
 }
 
 ui <- page_navbar(
-  title = "U.S. Residential Electricity: ARIMA vs TSLM vs ETS",
+  title = "U.S. Residential Electricity: Interactive Forecast",
   theme = bs_theme(version = 5),
  sidebar = sidebar(
     sliderInput("start", "Data start (month)",
