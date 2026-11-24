@@ -1,5 +1,5 @@
-# ADS-506 Final Project: U.S. Residential Electricity Demand
-
+# ADS-506 Assignment 5.1: U.S. Residential Electricity Demand Shiny Application
+Author: Vince Garcia
 Team 9: Mason Delan, Michael Rosalia, Vince Garcia
 
 This project forecasts monthly U.S. residential electricity sales. Home electricity use peaks in the summer and again in the winter, and the goal is a 12-month forecast of that demand.
@@ -31,6 +31,7 @@ renv.lock
 ```
 
 ## Acknowledgments & AI Use Disclosure
+Ownership: While this repository may be linked to the repository of our group's final project (found in Mike Rosalia's repository), this repository is mine and I am the sole contributor. 
 
 Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv) and the ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
 
