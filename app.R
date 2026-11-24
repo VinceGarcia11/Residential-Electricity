@@ -84,14 +84,15 @@ ui <- page_navbar(
       card(uiOutput("txt_fc"))))
 )
 
-server <- function(input, output, session) {
-  # Keep the start slider's upper limit tied to the holdout
-  observeEvent(input$holdout, {
-    mx <- latest_start(input$holdout) + 14
-    updateSliderInput(session, "start", max = mx,
-                      value = min(as.Date(input$start), mx))
-  })
 
+
+server <- function(input, output, session) {
+  #Gemini 4 Hydrogen recommended this to stop long runtimes
+observeEvent(input$holdout, {
+  mx <- latest_start(input$holdout) + 14
+  updateSliderInput(session, "start", max = mx,
+                    value = min(as.Date(input$start), mx))
+}, ignoreInit = TRUE)
   dat <- reactive({
     req(input$start)
     filter(raw, month >= yearmonth(input$start))
