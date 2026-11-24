@@ -8,15 +8,20 @@ library(feasts)
 library(lubridate)
 library(ggtime)
 
+# Fixed split shared with the team's ARIMA notebook:
+# train Jan 2010 - Jul 2025 (187 months), test Aug 2025 - Jul 2026 (12 months)
+HOLDOUT <- 12
+
 raw <- read.csv("data/residential_electricity.csv") |>
   mutate(month = yearmonth(as.Date(date))) |>
   select(month, kwh = residential_million_kwh) |>
-  as_tsibble(index = month)
+  as_tsibble(index = month) |>
+  filter_index("2010 Jan" ~ "2026 Jul")
 
 fit_models <- function(x) {
   x |>
     model(
-      ARIMA = ARIMA(log(kwh)),
+      ARIMA = ARIMA(kwh ~ 1 + pdq(0, 0, 1) + PDQ(0, 1, 1)),
       TSLM  = TSLM(log(kwh) ~ trend() + season()),
       ETS   = ETS(log(kwh))
     )
@@ -26,12 +31,10 @@ ui <- page_navbar(
   title = "U.S. Residential Electricity: ARIMA vs TSLM vs ETS",
   theme = bs_theme(version = 5),
   sidebar = sidebar(
-    sliderInput("start_year", "Use data starting from",
-                min = 1973, max = 2010, value = 1990, sep = ""),
-    sliderInput("holdout", "Test window (months)", 12, 48, 24, step = 6),
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
-    helpText("All models are fit on log(kWh) and back-transformed.",
-             "Accuracy is measured on the held-out final months.")
+    helpText("Training: Jan 2010 - Jul 2025. Test: Aug 2025 - Jul 2026 (12 months).",
+             "ARIMA is ARIMA(0,0,1)(0,1,1)[12] with drift on the raw series;",
+             "TSLM and ETS are fit on log(kWh) and back-transformed.")
   ),
   nav_panel("1. The series",
     layout_columns(col_widths = c(12, 12),
@@ -66,18 +69,18 @@ ui <- page_navbar(
 )
 
 server <- function(input, output, session) {
-  dat <- reactive(filter(raw, year(month) >= input$start_year))
+  dat <- reactive(raw)
 
   split <- reactive({
-    x <- dat(); n <- nrow(x); h <- input$holdout
+    x <- dat(); n <- nrow(x); h <- HOLDOUT
     list(train = slice_head(x, n = n - h), test = slice_tail(x, n = h))
   })
 
   fit_train <- reactive({
     withProgress(message = "Fitting models", fit_models(split()$train))
-  }) |> bindCache(input$start_year, input$holdout)
+  })
 
-  fc_test <- reactive(forecast(fit_train(), h = input$holdout))
+  fc_test <- reactive(forecast(fit_train(), h = HOLDOUT))
 
   acc <- reactive({
     accuracy(fc_test(), dat()) |>
@@ -87,7 +90,7 @@ server <- function(input, output, session) {
 
   fit_full <- reactive({
     withProgress(message = "Refitting on all data", fit_models(dat()))
-  }) |> bindCache(input$start_year)
+  })
 
   fc_full <- reactive(forecast(fit_full(), h = input$horizon))
 
@@ -145,8 +148,8 @@ server <- function(input, output, session) {
   })
 
   output$txt_models <- renderUI({
-    HTML("<p><b>ARIMA</b> automatically selects differencing and seasonal/non-seasonal
-    AR and MA terms, modelling the series through its autocorrelation.
+    HTML("<p><b>ARIMA</b> is the team's manual ARIMA(0,0,1)(0,1,1)[12] with drift, chosen
+    from 12-month forecasts inside the training sample (not the test year).
     <b>TSLM</b> is a regression on a deterministic trend and 11 seasonal dummies: simple
     and interpretable, but it assumes the trend and seasonal pattern are fixed over time.
     <b>ETS</b> uses exponentially smoothed level, trend and seasonal states that adapt
@@ -168,8 +171,8 @@ server <- function(input, output, session) {
       "<p>On the last %d months, <b>%s</b> had the lowest RMSE (%s million kWh,
       MAPE %.1f%%), and <b>%s</b> the highest RMSE (%s). A single holdout window is a noisy
       basis for ranking: differences of a few tenths of a percent in MAPE may not
-      persist in other windows. Try changing the window and start year to check stability.</p>",
-      input$holdout, a$Model[1], format(round(a$RMSE[1]), big.mark = ","), a$MAPE[1],
+      persist in other windows. The test window is fixed to match the team notebook.</p>",
+      HOLDOUT, a$Model[1], format(round(a$RMSE[1]), big.mark = ","), a$MAPE[1],
       a$Model[nrow(a)], format(round(a$RMSE[nrow(a)]), big.mark = ",")))
   })
 
@@ -217,7 +220,7 @@ server <- function(input, output, session) {
                 " months:</p><ul>", items, "</ul>
       <p>Where the models agree, confidence is higher; where they diverge or intervals widen,
       treat the forecast as uncertain. TSLM extrapolates a fixed trend, so it is the most
-      sensitive to the chosen start year.</p>"))
+      sensitive to the training window.</p>"))
   })
 }
 
