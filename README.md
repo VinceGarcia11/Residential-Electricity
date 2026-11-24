@@ -1,6 +1,8 @@
 # ADS-506 Assignment 5.1: U.S. Residential Electricity Demand Shiny Application
 Author: Vince Garcia
+
 Link: https://01a20b72-5fd4-48a8-5bfe-444a5192ea33.share.connect.posit.cloud/
+
 Team 9: Mason Delan, Michael Rosalia, Vince Garcia
 
 This project forecasts monthly U.S. residential electricity sales. The goal is an interactive live forecast of that demand.
