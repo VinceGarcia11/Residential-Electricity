@@ -175,11 +175,15 @@ output$txt_acc <- renderUI({
       a$Model[nrow(a)], format(round(a$RMSE[nrow(a)]), big.mark = ",")))
   }) #Using Gemini 4 Neon to modify the output for model accuracy
 
-  output$p_res <- renderPlot({
-    augment(fit_train()) |>
-      ggplot(aes(month, .innov)) + geom_line() +
-      facet_wrap(~.model, ncol = 1) + labs(x = NULL, y = "Innovation residual (log)")
-  })
+output$p_res <- renderPlot({
+  augment(fit_train()) |>
+    ggplot(aes(month, .innov)) +
+    geom_line() +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+    facet_wrap(~.model, ncol = 1, scales = "free_y") +
+    labs(x = NULL, y = "Innovation residual")
+})
+  #Gemini 4 Neon replaces the original residual plot in order to keep the y axis free
 
   output$p_acf <- renderPlot({
     augment(fit_train()) |> ACF(.innov) |> autoplot()
