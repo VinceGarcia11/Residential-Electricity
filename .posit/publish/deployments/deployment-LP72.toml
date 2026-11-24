@@ -10,8 +10,8 @@ id = "01a20ad8-84a6-d980-83b8-2061da66c388"
 dashboard_url = "https://connect.posit.cloud/vincegarcia11/content/01a20ad8-84a6-d980-83b8-2061da66c388"
 direct_url = "https://01a20ad8-84a6-d980-83b8-2061da66c388.share.connect.posit.cloud"
 logs_url = "https://connect.posit.cloud/vincegarcia11/content/01a20ad8-84a6-d980-83b8-2061da66c388/history"
-deployed_at = "2026-11-24T01:50:34.085Z"
-bundle_id = "01a20b3f-3a15-63d0-d45d-4e22158a9a32"
+deployed_at = "2026-11-24T02:14:32.637Z"
+bundle_id = "01a20b55-2dbe-763f-554c-60354263dd57"
 files = [
     "app.R",
     "data/residential_electricity.csv",

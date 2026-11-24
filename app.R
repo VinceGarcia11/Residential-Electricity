@@ -30,8 +30,10 @@ fit_models <- function(x) {
     model(
       #redefining the ARIMA model to reflect what Auto-ARIMA chose in the EDA assignment
       ARIMA = ARIMA(kwh ~ 1 + pdq(1, 0, 0) + PDQ(0, 1, 1)),
+      #Using an auto-selected TSLM model
       TSLM  = TSLM(log(kwh) ~ trend() + season()),
-      ETS   = ETS(log(kwh))
+      #Using the manual ETS model
+      ETS   = ETS(log(kwh) ~ error("M") + trend("N") + season("M"))
     )
 }
 
@@ -45,10 +47,10 @@ ui <- page_navbar(
                 step = 365.25 / 12),
     sliderInput("holdout", "Validation holdout (months)", min = 6, max = 36, value = 12, step = 6),
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
-    helpText(paste0("The data start is limited so at least ", MIN_TRAIN, " months remain for training after the holdout."),
-             "Default: start Jan 2010, 12-month holdout (Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026).",
+    helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
              "ARIMA is the auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift on the raw series;",
-             "TSLM and ETS are fit on log(kWh) and back-transformed.")
+             "TSLM is the auto-selected Time Series Linear Model with trend and seasonality on the raw series;",
+             "ETS is the Exponential Smoothing model fit on log(kWh), back-transformed, and given multiplicative seasonality and error, with no trend component.")
   ),
   nav_panel("1. The series",
     layout_columns(col_widths = c(12, 12),
