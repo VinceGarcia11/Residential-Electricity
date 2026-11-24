@@ -12,8 +12,18 @@ library(ggtime)
 raw <- read.csv("data/residential_electricity.csv") |>
   mutate(month = yearmonth(as.Date(date))) |>
   select(month, kwh = residential_million_kwh) |>
-  as_tsibble(index = month) |>
-  filter_index("2010 Jan" ~ "2026 Jul")
+  as_tsibble(index = month)
+
+DATA_START <- as.Date(min(raw$month))
+DATA_END <- as.Date(max(raw$month))
+DEFAULT_START <- as.Date("2010-01-01")
+# ARIMA(1,0,0)(0,1,1)[12] cannot be estimated on fewer than 36 months
+MIN_TRAIN <- 36
+
+# Latest allowed start so that at least MIN_TRAIN months remain after the holdout
+latest_start <- function(holdout) {
+  DATA_END %m-% months(MIN_TRAIN + holdout - 1)
+}
 #fitting the models
 fit_models <- function(x) {
   x |>
@@ -29,9 +39,14 @@ ui <- page_navbar(
   title = "U.S. Residential Electricity: ARIMA vs TSLM vs ETS",
   theme = bs_theme(version = 5),
  sidebar = sidebar(
+    sliderInput("start", "Data start (month)",
+                min = DATA_START + 14, max = latest_start(12) + 14,
+                value = DEFAULT_START + 14, timeFormat = "%b %Y",
+                step = 365.25 / 12),
     sliderInput("holdout", "Validation holdout (months)", min = 6, max = 36, value = 12, step = 6),
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
-    helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
+    helpText(paste0("The data start is limited so at least ", MIN_TRAIN, " months remain for training after the holdout."),
+             "Default: start Jan 2010, 12-month holdout (Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026).",
              "ARIMA is the auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift on the raw series;",
              "TSLM and ETS are fit on log(kWh) and back-transformed.")
   ),
@@ -69,7 +84,17 @@ ui <- page_navbar(
 )
 
 server <- function(input, output, session) {
-  dat <- reactive(raw)
+  # Keep the start slider's upper limit tied to the holdout
+  observeEvent(input$holdout, {
+    mx <- latest_start(input$holdout) + 14
+    updateSliderInput(session, "start", max = mx,
+                      value = min(as.Date(input$start), mx))
+  })
+
+  dat <- reactive({
+    req(input$start)
+    filter(raw, month >= yearmonth(input$start))
+  })
 
 split <- reactive({
     x <- dat(); n <- nrow(x); h <- input$holdout
