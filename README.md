@@ -20,10 +20,11 @@ A copy of the monthly residential series is in `data/residential_electricity.csv
 ## Repository
 
 ```
-data/.gitignore
-data/.README.md
-data/app.R
-data/renv.lock
+data/residential_electricity.csv
+.gitignore
+.README.md
+app.R
+renv.lock
 .posit/publish/deployments/deployment-LP72.toml
 .posit/publish/deployments/deployment-Residential Electricity Foreca-7SSC.toml
 
