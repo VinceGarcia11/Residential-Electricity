@@ -8,13 +8,13 @@ library(feasts)
 library(lubridate)
 library(ggtime)
 
-
+#reading the data
 raw <- read.csv("data/residential_electricity.csv") |>
   mutate(month = yearmonth(as.Date(date))) |>
   select(month, kwh = residential_million_kwh) |>
   as_tsibble(index = month) |>
   filter_index("2010 Jan" ~ "2026 Jul")
-
+#fitting the models
 fit_models <- function(x) {
   x |>
     model(
@@ -32,7 +32,7 @@ ui <- page_navbar(
     sliderInput("holdout", "Validation holdout (months)", min = 6, max = 36, value = 12, step = 6),
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
     helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
-             "ARIMA is ARIMA(0,0,1)(0,1,1)[12] with drift on the raw series;",
+             "ARIMA is the auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift on the raw series;",
              "TSLM and ETS are fit on log(kWh) and back-transformed.")
   ),
   nav_panel("1. The series",
@@ -112,10 +112,9 @@ acc <- reactive({
     pk <- x |> as_tibble() |> slice_max(kwh, n = 1)
     HTML(sprintf(
       "<p>The series runs from <b>%s</b> to <b>%s</b> (%d months, no missing values).
-      Annual totals grew from %s (%d) to %s (%d), roughly <b>%.1f%% per year</b> on average,
-      but growth has clearly slowed in recent decades. The all-time monthly peak is
-      <b>%s</b> (%s million kWh). Seasonal swings are large relative to the trend,
-      so any model must capture seasonality first.</p>",
+      Annual total sales grew from %s (%d) to %s (%d), roughly <b>%.1f%% per year</b> on average. The all-time monthly peak is
+      <b>%s</b> (%s million kWh). Seasonal swings are large relative to the trend, suggesting that the data is weather-driven.
+      All models include a seasonal component. </p>",
       format(min(x$month)), format(max(x$month)), nrow(x),
       format(round(first(yr$t)), big.mark = ","), first(yr$y),
       format(round(last(yr$t)), big.mark = ","), last(yr$y), 100 * g,
@@ -138,8 +137,8 @@ acc <- reactive({
     HTML(sprintf(
       "<p>Demand has two peaks: summer (cooling) and winter (heating), with the
       highest average seasonal effect in <b>%s</b> and the lowest in <b>%s</b>.
-      The seasonal amplitude is multiplicative (it grows with the level), which is
-      why the models use a log transform. Seasonal strength from the STL
+      The seasonal amplitude is multiplicative, which is
+      why the models use a log transform. 12-month seasonality from the STL
       decomposition is the main source of predictability here.</p>",
       s$m[which.max(s$s)], s$m[which.min(s$s)]))
   })
@@ -153,13 +152,11 @@ acc <- reactive({
   })
 
   output$txt_models <- renderUI({
-    HTML("<p><b>ARIMA</b> is the team's manual ARIMA(0,0,1)(0,1,1)[12] with drift, chosen
+    HTML("<p><b>ARIMA</b> is the team's auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift, chosen
     from 12-month forecasts inside the training sample (not the test year).
-    <b>TSLM</b> is a regression on a deterministic trend and 11 seasonal dummies: simple
-    and interpretable, but it assumes the trend and seasonal pattern are fixed over time.
-    <b>ETS</b> uses exponentially smoothed level, trend and seasonal states that adapt
-    to recent data. Information criteria such as AICc are not comparable across these model
-    classes (different likelihoods and differencing), so test-set accuracy is used instead.</p>")
+    <b>TSLM</b> is a linear regression that assumes a constant trend and consistent 12-month seasonality.
+    <b>ETS</b> uses exponentially smoothed leveling, trend and seasonal states that adapt
+    to recent data. Accuracy across all three models is measured with RMSE, MAE and MAPE.</p>")
   })
 
   output$p_test <- renderPlot({
@@ -174,9 +171,7 @@ output$txt_acc <- renderUI({
     a <- acc() |> filter(Window == "Validation")
     HTML(sprintf(
       "<p>On the last %d months, <b>%s</b> had the lowest validation RMSE (%s million kWh,
-      MAPE %.1f%%), and <b>%s</b> the highest RMSE (%s). A single holdout window is a noisy
-      basis for ranking: differences of a few tenths of a percent in MAPE may not
-      persist in other windows. Default is 12 months to match the team notebook.</p>",
+      MAPE %.1f%%), and <b>%s</b> the highest RMSE (%s).</p>",
       input$holdout, a$Model[1], format(round(a$RMSE[1]), big.mark = ","), a$MAPE[1],
       a$Model[nrow(a)], format(round(a$RMSE[nrow(a)]), big.mark = ",")))
   }) #Using Gemini 4 Neon to modify the output for model accuracy
@@ -202,11 +197,16 @@ output$txt_acc <- renderUI({
     l <- lb()
     bad <- l$Model[l$`p-value` < 0.05]
     HTML(sprintf(
-      "<p>Residuals that still show autocorrelation mean a model leaves structure
-      unexplained. At the 5%% level, the Ljung-Box test flags: <b>%s</b>. Even when
-      residuals are autocorrelated, point forecasts can be adequate, but prediction
-      intervals will be too narrow. Note the test uses in-sample residuals and the
-      p-values are not adjusted for model degrees of freedom.</p>",
+     "<p>Residuals represent leftover variance that the model could not capture. If the 
+  p-value of the residuals is less than 0.05, we reject the null hypothesis that the 
+  residuals are white noise. At the 5%% level, the models: <b>%s</b> fail the 
+  Ljung-Box test due to remaining autocorrelation.</p>
+
+  <p>Under the default holdout, the Residual ACF plots confirm this: TSLM shows 
+  strong autocorrelation with significant spikes outside the confidence bounds 
+  at lags 1 and 2, and ETS has a slight spike outside the bounds at 
+  lag 2. In contrast, the auto-selected ARIMA model keeps all lags within the 
+  confidence boundaries, indicating no significant remaining autocorrelation.</p> ",
       if (length(bad)) paste(bad, collapse = ", ") else "none"))
   })
 
@@ -222,10 +222,7 @@ output$txt_acc <- renderUI({
     items <- paste0("<li><b>", f$.model, "</b>: peak ", format(round(f$.mean), big.mark = ","),
                     " in ", format(f$month), "</li>", collapse = "")
     HTML(paste0("<p>Peak forecast month per model over the next ", input$horizon,
-                " months:</p><ul>", items, "</ul>
-      <p>Where the models agree, confidence is higher; where they diverge or intervals widen,
-      treat the forecast as uncertain. TSLM extrapolates a fixed trend, so it is the most
-      sensitive to the training window.</p>"))
+                " months:</p><ul>", items, "</ul>"))
   })
 }
 
