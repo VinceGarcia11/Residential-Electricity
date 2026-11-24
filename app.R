@@ -30,7 +30,7 @@ fit_models <- function(x) {
       #redefining the ARIMA model to reflect what Auto-ARIMA chose in the EDA assignment
       ARIMA = ARIMA(kwh ~ 1 + pdq(1, 0, 0) + PDQ(0, 1, 1)),
       #Using a manual-selected TSLM model
-      TSLM  = TSLM(log(kwh) ~ trend("M") + season("M")),
+      TSLM  = TSLM(log(kwh) ~ trend() + season()),
       #Using the manual ETS model
       ETS   = ETS(log(kwh) ~ error("M") + trend("M") + season("M"))
     )
@@ -48,7 +48,7 @@ ui <- page_navbar(
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
     helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
              "ARIMA is the auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift on the raw series;",
-             "TSLM is the Time Series Linear Model with multiplicative trend and seasonality on the log-transformed series and back-transformed automatically;",
+             "TSLM is the Time Series Linear Model with trend and seasonality on the log-transformed series and back-transformed automatically;",
              "ETS is the Exponential Smoothing model fit on the log-transformed series, back-transformed automatically, and given multiplicative seasonality, trend, and error.")
   ),
   nav_panel("1. The series",
@@ -163,8 +163,7 @@ acc <- reactive({
     HTML(sprintf(
       "<p>Demand has two peaks: summer (cooling) and winter (heating), with the
       highest average seasonal effect in <b>%s</b> and the lowest in <b>%s</b>.
-      The seasonal amplitude is multiplicative, which is
-      why the ETS and TSLM models use a log transform during training.</p>",
+      ",
       s$m[which.max(s$s)], s$m[which.min(s$s)]))
   })
 
