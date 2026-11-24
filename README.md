@@ -34,7 +34,7 @@ renv.lock
 
 Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv) and the ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
 
-Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial bslib page_navbar UI boilerplate, reactive pipeline scaffolding (split, fit_train, fc_test, fit_full), and assisted with Posit Connect Cloud deployment.
+Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial UI and back-end Shiny logic including: bslib page_navbar UI boilerplate, reactive pipeline scaffolding (split, fit_train, fc_test, fit_full), and assisted with Posit Connect Cloud deployment.
 
 Gemini: Assisted with refactoring app.R to add the interactive holdout window slider (input$holdout), combining training and validation metrics in the accuracy table (bind_rows()), and refining phrasing and spell-checking. Also assisted with phrasing of AI contributions. 
 
