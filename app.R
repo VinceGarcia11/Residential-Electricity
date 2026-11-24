@@ -152,8 +152,7 @@ acc <- reactive({
   })
 
   output$txt_models <- renderUI({
-    HTML("<p><b>ARIMA</b> is the team's auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift, chosen
-    from 12-month forecasts inside the training sample (not the test year).
+    HTML("<p><b>ARIMA</b> is the team's auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift.
     <b>TSLM</b> is a linear regression that assumes a constant trend and consistent 12-month seasonality.
     <b>ETS</b> uses exponentially smoothed leveling, trend and seasonal states that adapt
     to recent data. Accuracy across all three models is measured with RMSE, MAE and MAPE.</p>")
