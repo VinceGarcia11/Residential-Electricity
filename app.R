@@ -6,6 +6,7 @@ library(tsibble)
 library(fable)
 library(feasts)
 library(lubridate)
+library(ggtime)
 
 raw <- read.csv("data/residential_electricity.csv") |>
   mutate(month = yearmonth(as.Da
