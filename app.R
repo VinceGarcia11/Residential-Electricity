@@ -8,9 +8,6 @@ library(feasts)
 library(lubridate)
 library(ggtime)
 
-# Fixed split shared with the team's ARIMA notebook:
-# train Jan 2010 - Jul 2025 (187 months), test Aug 2025 - Jul 2026 (12 months)
-HOLDOUT <- 12
 
 raw <- read.csv("data/residential_electricity.csv") |>
   mutate(month = yearmonth(as.Date(date))) |>
@@ -21,7 +18,8 @@ raw <- read.csv("data/residential_electricity.csv") |>
 fit_models <- function(x) {
   x |>
     model(
-      ARIMA = ARIMA(kwh ~ 1 + pdq(0, 0, 1) + PDQ(0, 1, 1)),
+      #redefining the ARIMA model to reflect what Auto-ARIMA chose in the EDA assignment
+      ARIMA = ARIMA(kwh ~ 1 + pdq(1, 0, 0) + PDQ(0, 1, 1)),
       TSLM  = TSLM(log(kwh) ~ trend() + season()),
       ETS   = ETS(log(kwh))
     )
@@ -30,9 +28,10 @@ fit_models <- function(x) {
 ui <- page_navbar(
   title = "U.S. Residential Electricity: ARIMA vs TSLM vs ETS",
   theme = bs_theme(version = 5),
-  sidebar = sidebar(
+ sidebar = sidebar(
+    sliderInput("holdout", "Validation holdout (months)", min = 6, max = 36, value = 12, step = 6),
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
-    helpText("Training: Jan 2010 - Jul 2025. Test: Aug 2025 - Jul 2026 (12 months).",
+    helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
              "ARIMA is ARIMA(0,0,1)(0,1,1)[12] with drift on the raw series;",
              "TSLM and ETS are fit on log(kWh) and back-transformed.")
   ),
@@ -53,7 +52,8 @@ ui <- page_navbar(
     layout_columns(col_widths = c(12, 7, 5),
       card(card_header("Forecasts vs. held-out actuals"),
            plotOutput("p_test", height = 380)),
-      card(card_header("Accuracy on test window"), tableOutput("t_acc")),
+      card(card_header("Training vs. validation accuracy"), tableOutput("t_acc")),
+      #Using Gemini 4 Neon to modify this panel
       card(uiOutput("txt_acc")))),
   nav_panel("5. Residual diagnostics",
     layout_columns(col_widths = c(6, 6),
@@ -71,8 +71,8 @@ ui <- page_navbar(
 server <- function(input, output, session) {
   dat <- reactive(raw)
 
-  split <- reactive({
-    x <- dat(); n <- nrow(x); h <- HOLDOUT
+split <- reactive({
+    x <- dat(); n <- nrow(x); h <- input$holdout
     list(train = slice_head(x, n = n - h), test = slice_tail(x, n = h))
   })
 
@@ -80,12 +80,17 @@ server <- function(input, output, session) {
     withProgress(message = "Fitting models", fit_models(split()$train))
   })
 
-  fc_test <- reactive(forecast(fit_train(), h = HOLDOUT))
+  fc_test <- reactive(forecast(fit_train(), h = input$holdout))
 
-  acc <- reactive({
-    accuracy(fc_test(), dat()) |>
-      select(Model = .model, RMSE, MAE, MAPE) |>
-      arrange(RMSE)
+acc <- reactive({
+    bind_rows(
+      accuracy(fit_train()),
+      accuracy(fc_test(), dat())
+    ) |> 
+      #Using Gemini 4 Neon to combine the test and validation accuracies into one window
+      mutate(Window = ifelse(.type == "Test", "Validation", .type)) |>
+      select(Model = .model, Window, RMSE, MAE, MAPE) |>
+      arrange(desc(Window), RMSE)
   })
 
   fit_full <- reactive({
@@ -165,16 +170,16 @@ server <- function(input, output, session) {
 
   output$t_acc <- renderTable(acc(), digits = 2)
 
-  output$txt_acc <- renderUI({
-    a <- acc()
+output$txt_acc <- renderUI({
+    a <- acc() |> filter(Window == "Validation")
     HTML(sprintf(
-      "<p>On the last %d months, <b>%s</b> had the lowest RMSE (%s million kWh,
+      "<p>On the last %d months, <b>%s</b> had the lowest validation RMSE (%s million kWh,
       MAPE %.1f%%), and <b>%s</b> the highest RMSE (%s). A single holdout window is a noisy
       basis for ranking: differences of a few tenths of a percent in MAPE may not
-      persist in other windows. The test window is fixed to match the team notebook.</p>",
-      HOLDOUT, a$Model[1], format(round(a$RMSE[1]), big.mark = ","), a$MAPE[1],
+      persist in other windows. Default is 12 months to match the team notebook.</p>",
+      input$holdout, a$Model[1], format(round(a$RMSE[1]), big.mark = ","), a$MAPE[1],
       a$Model[nrow(a)], format(round(a$RMSE[nrow(a)]), big.mark = ",")))
-  })
+  }) #Using Gemini 4 Neon to modify the output for model accuracy
 
   output$p_res <- renderPlot({
     augment(fit_train()) |>
