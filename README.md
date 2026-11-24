@@ -39,4 +39,4 @@ Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial UI and ba
 
 Gemini: Assisted with refactoring app.R to add the interactive holdout window slider (input$holdout), combining training and validation metrics in the accuracy table (bind_rows()), and refining phrasing and spell-checking. Also assisted with phrasing of AI contributions. 
 
-Author Contributions: I integrated my own TSLM(log(kwh) ~ trend() + season()) model, customized the code structure to match my coding conventions, verified all reactive logic and diagnostic outputs, and authored the Part II data story.
+Author Contributions: I integrated my own TSLM(log(kwh) ~ trend() + season()) model, partially customized the code to fit my needs, verified all reactive logic and diagnostic outputs, and authored the Part II data story.
