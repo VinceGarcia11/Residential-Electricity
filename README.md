@@ -27,6 +27,7 @@ data/renv.lock
 .posit/publish/deployments/deployment-LP72.toml
 .posit/publish/deployments/deployment-Residential Electricity Foreca-7SSC.toml
 
+```
+
 Note about AI Use:
 Deployments were handled within Positron, using Claude Sonnet 5.5 within Posit Assistant. Additionally, the code within app.R, which handled the front-end and back end logic, was also largely assisted by Claude Sonnet 5.5 and Gemini Neon 4. Some phrasing and spell-checking was also assisted with Gemini Neon 4.  
-```
