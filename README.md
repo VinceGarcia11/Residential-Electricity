@@ -33,7 +33,7 @@ renv.lock
 ## Acknowledgments & AI Use Disclosure
 Ownership: While this repository may be linked to the repository of our group's final project (found in Mike Rosalia's repository), this repository is mine and I am the sole contributor. 
 
-Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv) and the auto-selected ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
+Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv), the manually-selected ETS(M,N,M) model, and the auto-selected ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
 
 Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial UI and back-end Shiny logic including: bslib page_navbar UI boilerplate, reactive pipeline scaffolding (split, fit_train, fc_test, fit_full), and assisted with Posit Connect Cloud deployment.
 
