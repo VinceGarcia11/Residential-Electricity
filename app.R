@@ -6,8 +6,6 @@ library(tsibble)
 library(fable)
 library(feasts)
 library(lubridate) 
-library(ragg) #recommended by Gemini Hydrogen for faster plot rendering
-options(shiny.useragg = TRUE) #recommended by Gemini Hydrogen for faster plot rendering
 
 #reading the data
 raw <- read.csv("data/residential_electricity.csv") |>
