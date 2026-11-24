@@ -2,7 +2,7 @@
 Author: Vince Garcia
 Team 9: Mason Delan, Michael Rosalia, Vince Garcia
 
-This project forecasts monthly U.S. residential electricity sales. Home electricity use peaks in the summer and again in the winter, and the goal is a 12-month forecast of that demand.
+This project forecasts monthly U.S. residential electricity sales. The goal is an interactive live forecast of that demand.
 
 ## Dataset
 
