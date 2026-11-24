@@ -31,4 +31,11 @@ renv.lock
 ```
 
 Note about AI Use:
-Deployments were handled within Positron, using Claude Sonnet 5.5 within Posit Assistant. Additionally, the code within app.R, which handled the front-end and back end logic, was also largely assisted by Claude Sonnet 5.5 and Gemini Neon 4. Some phrasing and spell-checking was also assisted with Gemini Neon 4.  
+Acknowledgments & AI Use Disclosure
+Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv) and the ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
+
+Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial bslib page_navbar UI boilerplate, reactive pipeline scaffolding (split, fit_train, fc_test, fit_full), and assisted with Posit Connect Cloud deployment.
+
+Gemini: Assisted with refactoring app.R to add the interactive holdout window slider (input$holdout), combining training and validation metrics in the accuracy table (bind_rows()), and refining phrasing and spell-checking. Also assisted with phrasing of AI contributions. 
+
+Author Contributions: I integrated my own TSLM(log(kwh) ~ trend() + season()) model, customized the code structure to match my coding conventions, verified all reactive logic and diagnostic outputs, and authored the Part II data story.
