@@ -30,10 +30,10 @@ fit_models <- function(x) {
     model(
       #redefining the ARIMA model to reflect what Auto-ARIMA chose in the EDA assignment
       ARIMA = ARIMA(kwh ~ 1 + pdq(1, 0, 0) + PDQ(0, 1, 1)),
-      #Using an auto-selected TSLM model
-      TSLM  = TSLM(log(kwh) ~ trend() + season()),
+      #Using a manual-selected TSLM model
+      TSLM  = TSLM(log(kwh) ~ trend("M") + season("M")),
       #Using the manual ETS model
-      ETS   = ETS(log(kwh) ~ error("M") + trend("N") + season("M"))
+      ETS   = ETS(log(kwh) ~ error("M") + trend("M") + season("M"))
     )
 }
 
@@ -49,8 +49,8 @@ ui <- page_navbar(
     sliderInput("horizon", "Future forecast horizon (months)", 6, 36, 12, step = 6),
     helpText("Default holdout (12 months): Training Jan 2010 - Jul 2025, Test Aug 2025 - Jul 2026.",
              "ARIMA is the auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift on the raw series;",
-             "TSLM is the auto-selected Time Series Linear Model with trend and seasonality on the log-transformed series and back-transformed automatically;",
-             "ETS is the Exponential Smoothing model fit on the log-transformed series, back-transformed automatically, and given multiplicative seasonality and error, with no trend component.")
+             "TSLM is the Time Series Linear Model with multiplicative trend and seasonality on the log-transformed series and back-transformed automatically;",
+             "ETS is the Exponential Smoothing model fit on the log-transformed series, back-transformed automatically, and given multiplicative seasonality, trend, and error.")
   ),
   nav_panel("1. The series",
     layout_columns(col_widths = c(12, 12),
@@ -165,8 +165,7 @@ acc <- reactive({
       "<p>Demand has two peaks: summer (cooling) and winter (heating), with the
       highest average seasonal effect in <b>%s</b> and the lowest in <b>%s</b>.
       The seasonal amplitude is multiplicative, which is
-      why the models use a log transform. 12-month seasonality from the STL
-      decomposition is the main source of predictability here.</p>",
+      why the ETS and TSLM models use a log transform during training.</p>",
       s$m[which.max(s$s)], s$m[which.min(s$s)]))
   })
 
@@ -180,9 +179,8 @@ acc <- reactive({
 
   output$txt_models <- renderUI({
     HTML("<p><b>ARIMA</b> is the team's auto-selected ARIMA(1,0,0)(0,1,1)[12] with drift.
-    <b>TSLM</b> is a linear regression that assumes a constant trend and consistent 12-month seasonality.
-    <b>ETS</b> uses exponentially smoothed leveling, trend and seasonal states that adapt
-    to recent data. Accuracy across all three models is measured with RMSE, MAE and MAPE.</p>")
+    <b>TSLM</b> is a linear regression model.
+    <b>ETS</b> uses exponentially smoothed leveling. Accuracy across all three models is measured with RMSE, MAE and MAPE.</p>")
   })
 
   output$p_test <- renderPlot({
@@ -231,7 +229,7 @@ output$p_res <- renderPlot({
   residuals are white noise. At the 5%% level, the models: <b>%s</b> fail the 
   Ljung-Box test due to remaining autocorrelation.</p>
 
-  <p>Under the default holdout, the Residual ACF plots confirm this: TSLM shows 
+  <p>Under the default holdout and training windows, the Residual ACF plots confirm this: TSLM shows 
   strong autocorrelation with significant spikes outside the confidence bounds 
   at lags 1 and 2, and ETS has a slight spike outside the bounds at 
   lag 2. In contrast, the auto-selected ARIMA model keeps all lags within the 
