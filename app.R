@@ -159,8 +159,7 @@ acc <- reactive({
   })
 
   output$p_test <- renderPlot({
-    s <- split()
-    autoplot(fc_test(), filter(dat(), month >= min(s$test$month) - 48), level = NULL) +
+    autoplot(fc_test(), filter(dat(), year(month) >= 2024), level = NULL) +
       labs(x = NULL, y = "Million kWh", colour = "Model")
   })
 
