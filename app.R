@@ -5,8 +5,9 @@ library(ggplot2)
 library(tsibble)
 library(fable)
 library(feasts)
-library(lubridate)
-library(ggtime)
+library(lubridate) 
+library(ragg) #recommended by Gemini Hydrogen for faster plot rendering
+options(shiny.useragg = TRUE) #recommended by Gemini Hydrogen for faster plot rendering
 
 #reading the data
 raw <- read.csv("data/residential_electricity.csv") |>
@@ -104,8 +105,8 @@ split <- reactive({
   })
 
   fit_train <- reactive({
-    withProgress(message = "Fitting models", fit_models(split()$train))
-  })
+  withProgress(message = "Fitting models", fit_models(split()$train))
+}) |> bindCache(input$start, input$holdout)
 
   fc_test <- reactive(forecast(fit_train(), h = input$holdout))
 
@@ -121,8 +122,8 @@ acc <- reactive({
   })
 
   fit_full <- reactive({
-    withProgress(message = "Refitting on all data", fit_models(dat()))
-  })
+  withProgress(message = "Refitting on all data", fit_models(dat()))
+}) |> bindCache(input$start)
 
   fc_full <- reactive(forecast(fit_full(), h = input$horizon))
 
@@ -199,8 +200,11 @@ output$txt_acc <- renderUI({
       a$Model[nrow(a)], format(round(a$RMSE[nrow(a)]), big.mark = ",")))
   }) #Using Gemini 4 Neon to modify the output for model accuracy
 
+  #Training the models once
+  aug_train <- reactive(augment(fit_train()))
+
 output$p_res <- renderPlot({
-  augment(fit_train()) |>
+  aug_train() |>
     ggplot(aes(month, .innov)) +
     geom_line() +
     geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
@@ -210,11 +214,11 @@ output$p_res <- renderPlot({
   #Gemini 4 Neon replaces the original residual plot in order to keep the y axis free
 
   output$p_acf <- renderPlot({
-    augment(fit_train()) |> ACF(.innov) |> autoplot()
+    aug_train() |> ACF(.innov) |> autoplot()
   })
 
   lb <- reactive({
-    augment(fit_train()) |>
+    aug_train() |>
       features(.innov, ljung_box, lag = 24) |>
       transmute(Model = .model, `Q statistic` = lb_stat, `p-value` = lb_pvalue)
   })
