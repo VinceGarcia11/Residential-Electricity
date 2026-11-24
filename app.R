@@ -5,9 +5,11 @@ library(ggplot2)
 library(tsibble)
 library(fable)
 library(feasts)
+library(lubridate)
 
 raw <- read.csv("data/residential_electricity.csv") |>
-  mutate(month = yearmonth(as.Date(date))) |>
+  mutate(month = yearmonth(as.Da
+                           te(date))) |>
   select(month, kwh = residential_million_kwh) |>
   as_tsibble(index = month)
 
