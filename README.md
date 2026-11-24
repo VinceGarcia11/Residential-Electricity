@@ -30,8 +30,8 @@ renv.lock
 
 ```
 
-Note about AI Use:
-Acknowledgments & AI Use Disclosure
+## Acknowledgments & AI Use Disclosure
+
 Project Dataset & Team Code: Uses the U.S. Residential Electricity dataset (residential_electricity.csv) and the ARIMA(0,0,1)(0,1,1)[12] with drift specification developed in our team's project notebook.
 
 Posit Assistant (Claude Sonnet 5.5 in Positron): Generated the initial bslib page_navbar UI boilerplate, reactive pipeline scaffolding (split, fit_train, fc_test, fit_full), and assisted with Posit Connect Cloud deployment.
