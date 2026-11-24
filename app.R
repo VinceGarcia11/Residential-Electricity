@@ -9,8 +9,7 @@ library(lubridate)
 library(ggtime)
 
 raw <- read.csv("data/residential_electricity.csv") |>
-  mutate(month = yearmonth(as.Da
-                           te(date))) |>
+  mutate(month = yearmonth(as.Date(date))) |>
   select(month, kwh = residential_million_kwh) |>
   as_tsibble(index = month)
 
